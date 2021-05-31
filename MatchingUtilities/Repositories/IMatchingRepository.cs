@@ -9,7 +9,8 @@ namespace MatchingUtilities.Repositories
     public interface IMatchingRepository
     {
         IEnumerable<AppUser> Match(AppUser currentUser, IEnumerable<AppUser> users, int returnCount, MatchingOption matchingOption = MatchingOption.Interest);
-        int CalculateMatchScore<TOptions>(AppUser currentUser, AppUser matchedUser);
+        int CalculateMatchScore<TMatchType>(AppUser currentUser, AppUser matchedUser);
+        int CalculateMatchScore(int index, int mIndex);
     }
 
     public enum MatchingOption
