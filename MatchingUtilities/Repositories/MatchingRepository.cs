@@ -1,4 +1,5 @@
 ﻿using DAL.Models;
+using GeoCoordinatePortable;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -23,6 +24,46 @@ namespace MatchingUtilities.Repositories
                 currentUser.Hobbies.Where(h => g.Hobbies.Contains(h)).Count())
                 .SelectMany(s => s);
         }
+
+
+        public IEnumerable<AppUser> MatchLocation(AppUser currentUser,
+            IEnumerable<AppUser> users,
+            int returnCount,
+            MatchingOption matchingOption = MatchingOption.Interest)
+        {
+            // Check users location
+            var currentUserLocation = new GeoCoordinate(currentUser.Location.Latidude, currentUser.Location.Longitute);
+            foreach (var user in users)
+            {
+                // Add distance from current user for each user to match against
+                user.MatchingDistance = new GeoCoordinate(user.Location.Latidude, user.Location.Longitute)
+                    .GetDistanceTo(currentUserLocation);
+
+                // Count matchings by provided matching options
+                if (matchingOption == MatchingOption.Hobby)
+                {
+                    user.MatchingCount = user.Hobbies.Where(h => currentUser.Hobbies.Contains(h)).Count();
+                }
+
+                if (matchingOption == MatchingOption.Interest)
+                {
+                    user.MatchingCount = user.Interests.Where(h => currentUser.Interests.Contains(h)).Count();
+                }
+
+                if (matchingOption == MatchingOption.InterestAndHobby)
+                {
+                    user.MatchingCount = user.Hobbies.Where(h => currentUser.Hobbies.Contains(h)).Count() +
+                        user.Interests.Where(h => currentUser.Interests.Contains(h)).Count();
+                }
+
+                // Calculate matching score based on number of matches and distance
+                user.MatchingScore = (user.MatchingCount * 1000) - (int)user.MatchingDistance;
+            }
+
+            // Return <returnCount> numbers of users ordered by highest matching score
+            return users.OrderByDescending(o => o.MatchingScore).Take(returnCount);
+        }
+
 
         public int CalculateMatchScore<TMatchType>(AppUser currentUser, AppUser matchedUser)
         {
